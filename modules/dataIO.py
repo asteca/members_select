@@ -35,7 +35,7 @@ def readParams(fname):
     else:
         print("Cluster not found in 'params.ini' file")
 
-    if outl not in ('2DE', '3DE', 'LOF', 'IF', 'EE', 'HT2', 'SPE', 'DBSCAN'):
+    if outl not in ('2DE', '3DE', 'LOF', 'IF', 'EE', 'HT2', 'SPE'):
         raise ValueError("Outlier method not recognized: {}".format(outl))
 
     return out_plot, cx, cy, cPlx, cpmRA, cpmDE, N_memb, pmin, outl

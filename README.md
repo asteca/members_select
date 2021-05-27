@@ -22,7 +22,7 @@ The naive selection of `P_cut=0.5` is seldom appropriate, as the data sets analy
 
 The core of the method can be described as follows:
 
-1. Select a probability cut value `P_cut`
+1. Select a probability cut value `P_cut` starting from the largest value (i.e., `probs_final=1`)
 2. Separate stars into members (`probs_final>=P_cut`) and field (`probs_final<P_cut`) classes
 3. Reject outliers in the members class, using the `Plx, pmRA, pmDE` space. Stars rejected as outliers become field stars
 4. Obtain the field density in the `_x, _y` space using the stars classified as field stars

@@ -59,8 +59,8 @@ def main(pstep=0.005):
         print("*** {} {:.2f} {:.2f} {:.0f}".format(
             fname, min_prob, rad_cl, len(memb_d)))
 
-        # # Store split data
-        # dataIO.writeData(outl, file, memb_d, field_d)
+        # Store split data
+        dataIO.writeData(outl, file, memb_d, field_d)
 
         if out_plot:
             plot.make(
