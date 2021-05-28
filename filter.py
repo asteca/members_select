@@ -13,7 +13,7 @@ def main(pstep=0.005):
     for file in files:
         fname = file.split('.')[0]
 
-        # if fname not in ('trumpler_5', 'trumpler_20'):
+        # if fname not in ('ngc_7142',):
         #     continue
 
         out_plot, cx, cy, Plx_c, pmRA_c, pmDE_c, N_memb_input,\
