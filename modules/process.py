@@ -86,10 +86,10 @@ def manualFilter(outl, prob_range, data, N_memb):
     return min_prob, memb_d, field_d
 
 
-def autoFilter(outl, prob_range, data):
+def autoFilter(outl, prob_range, data, pp_delta_break=.25):
     """
     """
-    rad_memb_pp = []
+    rad_memb_pp, pp_min, delta_min = [], 1., np.inf
     for i, pp in enumerate(prob_range):
 
         delta, rad_max, N_memb = np.inf, 0, 0
@@ -126,11 +126,19 @@ def autoFilter(outl, prob_range, data):
             N_memb_estim = N_in_rad - field_dens * cl_area
             # Members difference (minimized parameter)
             delta = abs(N_memb - N_memb_estim)
+
+            if delta < delta_min:
+                delta_min = delta
+                pp_min = pp
+
             # This approach gives similar but slightly worst results
             # delta = abs(1. - N_memb / N_memb_estim)
 
         rad_memb_pp.append([delta, rad_max, N_memb, pp])
         # updt(len(prob_range), i + 1)
+
+        if pp_min - pp > pp_delta_break:
+            break
 
     return np.array(rad_memb_pp).T
 
