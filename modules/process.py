@@ -117,7 +117,13 @@ def autoFilter(outl, prob_range, data, pp_delta_break=.25):
             rad_3MAD = 3 * MAD(data_in_filt['dist_c'], scale='normal')
             rad_4MAD = 4 * MAD(data_in_filt['dist_c'], scale='normal')
             ring = (data['dist_c'] > rad_3MAD) & (data['dist_c'] < rad_4MAD)
-            N_in_ring = ring.sum()
+
+            # Subtracting this number from 'ring.sum()' would be the right
+            # approach, but it gives worse results.
+            # N_memb_ring = ((data_in_filt['dist_c'] > rad_3MAD)
+            #                & (data_in_filt['dist_c'] < rad_4MAD)).sum()
+
+            N_in_ring = ring.sum()  # - N_memb_ring
             area_ring = np.pi * (rad_4MAD**2 - rad_3MAD**2)
 
             # Field density for the ring
