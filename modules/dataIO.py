@@ -59,15 +59,19 @@ def readData(file):
     return data
 
 
-def writeData(outl, file, memb_d, field_d):
+def writeData(outl, N_memb_input, file, memb_d, field_d):
     """
     """
     # Remove added columns
     memb_d.remove_columns(['dist_c'])
     field_d.remove_columns(['dist_c'])
-    if outl in ('2DE', '3DE'):
+    if outl in ('2DE', '3DE') or N_memb_input != 'a':
         memb_d.remove_columns(['dc_plx', 'dc_pmra', 'dc_pmde'])
         field_d.remove_columns(['dc_plx', 'dc_pmra', 'dc_pmde'])
+        if N_memb_input != 'a':
+            memb_d.remove_columns(['dd'])
+            field_d.remove_columns(['dd'])
+
     # Identify members and field stars
     memb_d.add_column(1, name='membs_select')
     field_d.add_column(0, name='membs_select')

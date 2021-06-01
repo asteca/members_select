@@ -13,9 +13,6 @@ def main(pstep=0.005):
     for file in files:
         fname = file.split('.')[0]
 
-        # if fname not in ('ngc_7142',):
-        #     continue
-
         out_plot, cx, cy, Plx_c, pmRA_c, pmDE_c, N_memb_input,\
             pmin, outl = dataIO.readParams(fname)
 
@@ -38,6 +35,8 @@ def main(pstep=0.005):
             pmRA_c = pmRA_e
         if pmDE_c == 'a':
             pmDE_c = pmDE_e
+        if N_memb_input != 'a':
+            print("Manual number of members: {}".format(N_memb_input))
 
         print("cx={:.4f}, cy={:.4f}".format(cx, cy))
         print("Plx_c={:.3f}, pmRA_c={:.3f}, pmDE_c={:.3f}".format(
@@ -48,7 +47,7 @@ def main(pstep=0.005):
 
         # Add distances to Plx+PMs centers. Square here to avoid repeating the
         # operation in filterOutliers()
-        if outl in ('2DE', '3DE'):
+        if outl in ('2DE', '3DE') or N_memb_input != 'a':
             data.add_column((data['Plx'] - Plx_c)**2, name='dc_plx')
             data.add_column((data['pmRA'] - pmRA_c)**2, name='dc_pmra')
             data.add_column((data['pmDE'] - pmDE_c)**2, name='dc_pmde')
@@ -60,7 +59,7 @@ def main(pstep=0.005):
             fname, min_prob, rad_cl, len(memb_d)))
 
         # Store split data
-        dataIO.writeData(outl, file, memb_d, field_d)
+        dataIO.writeData(outl, N_memb_input, file, memb_d, field_d)
 
         if out_plot:
             plot.make(
@@ -76,10 +75,10 @@ def dataProcess(N_memb_input, outl, prob_range, data):
     if N_memb_input != 'a':
         # TODO finish
         N_memb = int(N_memb_input)
-        min_prob, memb_d, field_d = process.manualFilter(
+        min_prob, memb_dd, field_dd = process.manualFilter(
             outl, prob_range, data, N_memb)
 
-        rad_cl = memb_d['dist_c'].max()
+        rad_cl = memb_dd['dist_c'].max()
 
         rad_memb_pp = np.array([[0, rad_cl, N_memb, min_prob]]).T
         idx = 0
