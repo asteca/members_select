@@ -6,6 +6,7 @@ from scipy.stats import median_abs_deviation as MAD
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.ensemble import IsolationForest
 from sklearn.covariance import EllipticEnvelope
+from .ADtest import runTest
 # https://github.com/erdogant/pca
 from pca import pca
 
@@ -61,7 +62,7 @@ def centers(data, pmin=.99, pstep=.01, Nmin_p=0.01, Nstd=5):
     return cx_c, cy_c, Plx_c, pmRA_c, pmDE_c
 
 
-def manualFilter(outl, prob_range, data, N_memb):
+def manualFilterNmemb(outl, prob_range, data, N_memb):
     """
     """
     data.add_column(np.sqrt(
@@ -81,6 +82,60 @@ def manualFilter(outl, prob_range, data, N_memb):
                     data[~msk], data_out_filt, data_in_filt[idx][N_memb:]])
 
                 min_prob = pp
+                break
+
+    return min_prob, memb_d, field_d
+
+
+def manualFilterRad(outl, prob_range, data, rad_m):
+    """
+    """
+    for i, pp in enumerate(prob_range):
+        msk = data['probs_final'] >= pp
+        if msk.sum() > 0:
+
+            data_in_filt, data_out_filt = filterOutliers(outl, data[msk])
+
+            if len(data_in_filt) >= 0:
+
+                rad_max = data_in_filt['dist_c'].max()
+                if rad_max >= rad_m:
+
+                    memb_d = data_in_filt
+                    field_d = vstack([data[~msk], data_out_filt])
+
+                    min_prob = pp
+                    break
+
+    return min_prob, memb_d, field_d
+
+
+def manualFilterNmembRad(outl, prob_range, data, N_memb, rad_m):
+    """
+    """
+    data.add_column(np.sqrt(
+        data['dc_plx'] + data['dc_pmra'] + data['dc_pmde']), name='dd')
+
+    msk = data['dist_c'] <= rad_m
+    data_r, data_out_r = data[msk], data[~msk]
+
+    min_prob = np.nan
+    for i, pp in enumerate(prob_range):
+        msk = data_r['probs_final'] >= pp
+        if msk.sum() > 0:
+
+            data_in_filt, data_out_filt = filterOutliers(outl, data_r[msk])
+            print(pp, msk.sum(), len(data_in_filt))
+
+            # Select those closest to the Plx+PM center
+            idx = np.argsort(data_in_filt['dd'])
+            memb_d = data_in_filt[idx][:N_memb]
+            field_d = vstack([
+                data_out_r, data_r[~msk], data_out_filt,
+                data_in_filt[idx][N_memb:]])
+            min_prob = pp
+
+            if len(data_in_filt) >= N_memb:
                 break
 
     return min_prob, memb_d, field_d
@@ -139,6 +194,59 @@ def autoFilter(outl, prob_range, data, pp_delta_break=.25):
 
             # This approach gives similar but slightly worst results
             # delta = abs(1. - N_memb / N_memb_estim)
+
+        rad_memb_pp.append([delta, rad_max, N_memb, pp])
+        # updt(len(prob_range), i + 1)
+
+        if pp_min - pp > pp_delta_break:
+            break
+
+    return np.array(rad_memb_pp).T
+
+
+def ADFilter(outl, prob_range, data, center, pp_delta_break=.25):
+    """
+    """
+    rad_memb_pp, pp_min, delta_min = [], 1., np.inf
+    for i, pp in enumerate(prob_range):
+
+        delta, rad_max, N_memb = np.inf, 0, 0
+
+        msk = data['probs_final'] >= pp
+        if msk.sum() > 0:
+            # Select data by probability cut
+            data_in_pp = data[msk]
+
+            # Split the data selected by probability cut, into accepted
+            # and outliers
+            data_in_filt, data_out_filt = filterOutliers(outl, data_in_pp)
+
+            # rad_max = 3 * MAD(data_in_filt['dist_c'], scale='normal')
+            # rad_max = 4 * MAD(data_in_filt['dist_c'], scale='normal')
+            rad_max = data_in_filt['dist_c'].max()
+
+            msk = data_in_filt['dist_c'] <= rad_max
+            data_in_filt = data_in_filt[msk]
+
+            # # Number of stars selected by probability cut, and not
+            # # rejected as outliers. I.e.: members.
+            N_memb = len(data_in_filt)
+
+            # Distances to center
+            msk = data['dist_c'] <= rad_max
+            cl_region = data[msk]
+
+            # Define equal area field region around the cluster
+            rad_r = np.sqrt(2) * rad_max
+            msk = (data['dist_c'] > rad_max) & (data['dist_c'] <= rad_r)
+            fr_region = data[msk]
+
+            delta = max(0., 1. - runTest(cl_region, fr_region))
+            print(pp, delta)
+
+            if delta < delta_min:
+                delta_min = delta
+                pp_min = pp
 
         rad_memb_pp.append([delta, rad_max, N_memb, pp])
         # updt(len(prob_range), i + 1)
@@ -232,37 +340,37 @@ def filterOutliers(outl, data):
     return data[msk], data[~msk]
 
 
-def rotate(data):
-    """
-    Rotate a 2d vector.
+# def rotate(data):
+#     """
+#     Rotate a 2d vector.
 
-    (Very) Stripped down version of the great 'kneebow' package, by Georg
-    Unterholzner. Source:
+#     (Very) Stripped down version of the great 'kneebow' package, by Georg
+#     Unterholzner. Source:
 
-    https://github.com/georg-un/kneebow
+#     https://github.com/georg-un/kneebow
 
-    data   : 2d numpy array. The data that should be rotated.
-    return : probability corresponding to the elbow.
-    """
-    # The angle of rotation in radians.
-    theta = np.arctan2(
-        data[-1, 1] - data[0, 1], data[-1, 0] - data[0, 0])
+#     data   : 2d numpy array. The data that should be rotated.
+#     return : probability corresponding to the elbow.
+#     """
+#     # The angle of rotation in radians.
+#     theta = np.arctan2(
+#         data[-1, 1] - data[0, 1], data[-1, 0] - data[0, 0])
 
-    # Rotation matrix
-    co, si = np.cos(theta), np.sin(theta)
-    rot_matrix = np.array(((co, -si), (si, co)))
+#     # Rotation matrix
+#     co, si = np.cos(theta), np.sin(theta)
+#     rot_matrix = np.array(((co, -si), (si, co)))
 
-    # Rotate data vector
-    rot_data = data.dot(rot_matrix)
+#     # Rotate data vector
+#     rot_data = data.dot(rot_matrix)
 
-    # Find elbow index
-    elbow_idx = np.where(rot_data == rot_data.min())[0][0]
+#     # Find elbow index
+#     elbow_idx = np.where(rot_data == rot_data.min())[0][0]
 
-    # Adding a small percentage to the selected probability improves the
-    # results by making the cut slightly stricter.
-    prob_cut = data[elbow_idx][1]
+#     # Adding a small percentage to the selected probability improves the
+#     # results by making the cut slightly stricter.
+#     prob_cut = data[elbow_idx][1]
 
-    return prob_cut
+#     return prob_cut
 
 
 def _3dEllip(Ns, dd):
