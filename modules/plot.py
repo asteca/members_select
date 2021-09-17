@@ -69,9 +69,6 @@ def make(
         elif ax_y == 2:
             ax.set_title("P>={:.3f} | r={:.1f} | N={}".format(
                 min_prob, rad_memb_pp[1][idx] * 60, len(x)))
-        # elif ax_y == 3:
-        #     ax.set_title("N={} | ({:.4f}, {:.4f})".format(
-        #         len(x), np.median(x), np.median(y)))
         ax.scatter(x, y, alpha=.5, marker=mrk, s=sz, color=color)
         ax.scatter(cx, cy, marker='x', s=15, color='r')
         circle = plt.Circle((cx, cy), rad_cl, color='green', fill=False)
@@ -80,6 +77,7 @@ def make(
         ax.set_ylim(ymin, ymax)
         ax.set_xlabel("ra")
         ax.set_ylabel("de")
+        ax.set_aspect('equal')
 
         #
         if ax_y in (1, 3):
