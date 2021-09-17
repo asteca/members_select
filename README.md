@@ -25,11 +25,7 @@ The core of the method can be described as follows:
 1. Select a probability cut value `P_cut` starting from the largest value (i.e., `probs_final=1`)
 2. Separate stars into members (`probs_final>=P_cut`) and field (`probs_final<P_cut`) classes
 3. Reject outliers in the members class, using the `Plx, pmRA, pmDE` space. Stars rejected as outliers become field stars
-4. Obtain the field density in the `_x, _y` space using the stars classified as field stars
-5. Using the field density, estimate the number of members in the cluster area defined by the members
-6. Store the (absolute valued) difference between the number of stars in the members class, and the number of members estimated in step 5
-7. Repeat steps 1-6 changing the `P_cut` by a small step in a given range
-8. Select the `P_cut` that minimizes the difference stored in step 6
+4. **still working on this**
 
 
 
