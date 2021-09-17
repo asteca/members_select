@@ -13,8 +13,8 @@ def main(pstep=0.005):
     for file in files:
         fname = file.split('.')[0]
 
-        out_plot, cx, cy, Plx_c, pmRA_c, pmDE_c, N_memb_input,\
-            pmin, outl = dataIO.readParams(fname)
+        out_field, out_plot, cx, cy, Plx_c, pmRA_c, pmDE_c, rad_input,\
+            N_memb_input, pmin, outl = dataIO.readParams(fname)
 
         print("Outlier rejection method:", outl)
         pmin = 0.5 if pmin == 'a' else pmin
@@ -35,6 +35,8 @@ def main(pstep=0.005):
             pmRA_c = pmRA_e
         if pmDE_c == 'a':
             pmDE_c = pmDE_e
+        if rad_input != 'a':
+            print("Manual radius: {}".format(rad_input))
         if N_memb_input != 'a':
             print("Manual number of members: {}".format(N_memb_input))
 
@@ -53,13 +55,10 @@ def main(pstep=0.005):
             data.add_column((data['pmDE'] - pmDE_c)**2, name='dc_pmde')
 
         rad_memb_pp, idx, min_prob, rad_cl, memb_d, field_d = dataProcess(
-            N_memb_input, outl, prob_range, data)
-
-        print("*** {} {:.2f} {:.2f} {:.0f}".format(
-            fname, min_prob, rad_cl, len(memb_d)))
+            rad_input, N_memb_input, outl, prob_range, data, (cx, cy))
 
         # Store split data
-        dataIO.writeData(outl, N_memb_input, file, memb_d, field_d)
+        dataIO.writeData(outl, N_memb_input, file, memb_d, field_d, out_field)
 
         if out_plot:
             plot.make(
@@ -69,22 +68,15 @@ def main(pstep=0.005):
         print("Finished")
 
 
-def dataProcess(N_memb_input, outl, prob_range, data):
+def dataProcess(rad_input, N_memb_input, outl, prob_range, data, center):
     """
     """
-    if N_memb_input != 'a':
-        # TODO finish
-        N_memb = int(N_memb_input)
-        min_prob, memb_dd, field_dd = process.manualFilter(
-            outl, prob_range, data, N_memb)
-
-        rad_cl = memb_dd['dist_c'].max()
-
-        rad_memb_pp = np.array([[0, rad_cl, N_memb, min_prob]]).T
-        idx = 0
-
-    else:
-        rad_memb_pp = process.autoFilter(outl, prob_range, data)
+    if N_memb_input == 'a' and rad_input == 'a':
+        # TODO
+        print("FINISH THIS")
+        print("Using AD filter")
+        # rad_memb_pp = process.autoFilter(outl, prob_range, data)
+        rad_memb_pp = process.ADFilter(outl, prob_range, data, center)
 
         # Extract final optimal values
         idx = np.argmin(rad_memb_pp[0])
@@ -98,6 +90,31 @@ def dataProcess(N_memb_input, outl, prob_range, data):
         msk_in_rad = memb_d['dist_c'] <= rad_cl
         memb_dd = memb_d[msk_in_rad]
         field_dd = vstack([field_d, memb_d[~msk_in_rad]])
+
+    else:
+
+        if N_memb_input != 'a' and rad_input == 'a':
+            # TODO finish
+            N_memb = int(N_memb_input)
+            min_prob, memb_dd, field_dd = process.manualFilterNmemb(
+                outl, prob_range, data, N_memb)
+            rad_cl = memb_dd['dist_c'].max()
+
+        if N_memb_input == 'a' and rad_input != 'a':
+            rad_m = float(rad_input)
+            min_prob, memb_dd, field_dd = process.manualFilterRad(
+                outl, prob_range, data, rad_m)
+            rad_cl = rad_m
+
+        elif N_memb_input != 'a' and rad_input != 'a':
+            rad_m = float(rad_input)
+            N_memb = int(N_memb_input)
+            min_prob, memb_dd, field_dd = process.manualFilterNmembRad(
+                outl, prob_range, data, N_memb, rad_m)
+            rad_cl = rad_m
+
+        rad_memb_pp = np.array([[0, rad_cl, N_memb, min_prob]]).T
+        idx = 0
 
     return rad_memb_pp, idx, min_prob, rad_cl, memb_dd, field_dd
 
