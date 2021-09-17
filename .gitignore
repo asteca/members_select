@@ -130,5 +130,4 @@ dmypy.json
 
 *.png
 *.dat
-*.sublime-project
-*.sublime-workspace
+*-workspace
