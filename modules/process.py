@@ -90,6 +90,7 @@ def manualFilterNmemb(outl, prob_range, data, N_memb):
 def manualFilterRad(outl, prob_range, data, rad_m):
     """
     """
+    min_prob = prob_range[0]
     for i, pp in enumerate(prob_range):
         msk = data['probs_final'] >= pp
         if msk.sum() > 0:

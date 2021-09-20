@@ -104,7 +104,7 @@ def dataProcess(rad_input, N_memb_input, outl, prob_range, data, center):
             rad_m = float(rad_input)
             min_prob, memb_dd, field_dd = process.manualFilterRad(
                 outl, prob_range, data, rad_m)
-            rad_cl = rad_m
+            rad_cl, N_memb = rad_m, len(memb_dd)
 
         elif N_memb_input != 'a' and rad_input != 'a':
             rad_m = float(rad_input)
